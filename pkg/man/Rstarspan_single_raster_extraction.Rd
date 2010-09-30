@@ -2,7 +2,7 @@
 \alias{Rstarspan_single_raster_extraction}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+TBD
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~

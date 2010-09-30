@@ -138,8 +138,8 @@ Rstarspan_vector_to_spatialpoints = function(
 
 
 Rstarspan_single_raster_extraction=function(
-		vector_spatialpoints,
-		raster_stack,
+		vector,
+		raster,
 		bands=NA,
 		outformat="data.frame",
 		outorder="db",
@@ -150,46 +150,107 @@ Rstarspan_single_raster_extraction=function(
 	require(rgdal)
 	require(raster)
 	
-	if(missing(vector_spatialpoints))
+	if(missing(vector))
 	{
 		print("Missing vector_spatialpoints...")
 		return(NULL)
 	}
 	
-	if(missing(raster_stack))
+	if(missing(raster))
 	{
 		print("Missing raster_stack...")
 		return(NULL)
 	}
 	
 	# Reproject vector_spatialpoints to raster_stack projection.
-	vector_spatialpoints_reproject=spTransform(vector_spatialpoints,CRS(projection(raster_stack)))
+	# print(class(vector_spatialpoints))
+	vector_reproject=spTransform(vector,CRS=CRS(projection(raster)))
+#	print(vector_spatialpoints)
+#	print(vector_spatialpoints_reproject)
+#	print(projection(raster_stack))
+	
 	# writeOGR(vector_spatialpoints_reproject, "/home/CFC/jonathan.greenberg/shares/projects/water_deficit/data/vector", "COOP", driver="ESRI Shapefile")
+	
+	# print(length(vector_spatialpoints_reproject))
 	
 	# Do the extraction...
 	if(is.na(bands))
 	{
-		single_raster_extraction_raw=xyValues(raster_stack,vector_spatialpoints_reproject)
-		bandsid=paste("B",sprintf("%05d",seq(1:nlayers(raster_stack))),sep="")
+		if(class(vector)=="SpatialPoints" | class(vector)=="SpatialPointsDataFrame")
+		{
+			single_raster_extraction_raw=xyValues(raster,vector_reproject,method='bilinear')
+		} 
+		if(class(vector)=="SpatialPolygons" | class(vector)=="SpatialPolygonsDataFrame")
+		{
+			# TODO: add in weights!
+			single_raster_extraction_raw=polygonValues(vector_reproject,raster)
+		}
+		# TODO: Lines!
+		
+		bandsid=paste("B",sprintf("%05d",seq(1:nlayers(raster))),sep="")
 	} else
 	{
-		single_raster_extraction_raw=xyValues(stack(raster_stack@layers[bands]),vector_spatialpoints_reproject)
+		single_raster_extraction_raw=xyValues(stack(raster@layers[bands]),vector_reproject,method='bilinear')
 		bandsid=paste("B",sprintf("%05d",bands),sep="")
 	}
 	
+	single_raster_extraction_raw=as.matrix(single_raster_extraction_raw)
+	
+#	print(class(single_raster_extraction_raw))	
 	if(!(is.na(rasterid)))
 	{
 		colnames(single_raster_extraction_raw)=paste(rasterid,bandsid,sep=".")
 	}
-	rownames(single_raster_extraction_raw)=seq(1:dim(vector_spatialpoints_reproject)[1])
+	print(dim(vector_reproject))
+	if(length(vector_reproject)>1)
+	{
+		rownames(single_raster_extraction_raw)=seq(1:dim(vector_reproject)[1])
+	} else
+	{
+		rownames(single_raster_extraction_raw)=1
+	}
 	return(single_raster_extraction_raw)
 }
 
+Rstarspan_raster_string_to_raster_list=function(raster)
+{
+	require("raster")
+	if(class(raster)=="character")
+	{
+		file_search=dir(dirname(raster),
+				pattern=basename(raster),
+				full.names=TRUE)
+		
+		file_search_N=length(file_search)
+		
+		if(length(file_search_N)==0)
+		{
+			print(paste("Search pattern",raster,"returned no results, please check and rerun...",sep=" "))
+			return(NULL)
+		} else
+		{
+			raster_search_list=as.list(file_search)
+		}
+		
+		raster_list=sapply(raster_search_list,brick,simplify=FALSE)
+		names(raster_list)=sapply(raster_list,function(x) basename(filename(x)),simplify=FALSE)
+		
+	} else
+	{
+		# Need some more error checking for now...
+		raster_list=raster
+		names(raster_list)=basename(filename(raster))
+	}
+	return(raster_list)
+}
+
 Rstarspan=function(
-		vector_files,
-		raster_files,
+#		vector_files,
+#		raster_files,
+		rasters,
+		vectors,
 		output_name,
-		outformat="csv",
+		outformat="none",
 		outorder="db",
 		method="simple",
 		vector_proj4strings,
@@ -205,11 +266,15 @@ Rstarspan=function(
 		output_vector_fname=TRUE,
 		output_vector_data=TRUE,
 		out_raster_fullpath=FALSE,
-		output_raster_file_types=TRUE)	
+		output_raster_file_types=TRUE,
+		index_match=FALSE,
+		use_zvalue=TRUE,
+		vector_names=NA)	
 {
 	
 	# raster_files: a vector of raster files or patterns to match, following the pattern requirements of dir()
 	#	The full path should be included in the search pattern.  
+	# rasters: a list of pre-defined raster/brick/stack objects (see package "raster").
 	
 	# 	Some examples: ???
 	
@@ -217,15 +282,18 @@ Rstarspan=function(
 	#	either does not exist or does not conform.  The list must be equal to the number of raster_files.
 	#	Note that this implies that each search search string should be assumed to have the same projections.  
 	
-	# vector_files: a vector of vector files or patterns to match.  
+	# vector_files: a vector of vector files or patterns to match. 
+	# vectors: a list of sp objects or spZoo objects.
 	
-	if(missing(vector_files))
+	if(missing(vectors))
 	{
+		print("You must assign either vector_files or vectors (or both), exiting..")
 		return(NULL)
 	}
 	
-	if(missing(raster_files))
+	if(missing(rasters))
 	{
+		print("You must assign either raster_files or rasters (or both), exiting..")
 		return(NULL)
 	}
 	
@@ -238,62 +306,57 @@ Rstarspan=function(
 	{
 		output_raster_file_types=FALSE
 	}
+	
 
-	# Create raster stacks.
-	raster_file_search_dataframe=Rstarspan_file_search(raster_files)
-	raster_file_search_N=dim(raster_file_search_dataframe)[1]
-	raster_list=vector(mode="list",length=raster_file_search_N)
-
-	if(missing(raster_proj4strings))
+	# Prepare vectors
+	if(class(vectors)=="SpatialPolygonsDataFrame" || class(vectors) == "SpatialPointsDataFrame")
 	{
-		for(i in 1:raster_file_search_N)
+		# Only one vector was provided.
+		vectors_list_N=1
+		vectors=list(vectors)
+		if(is.na(vector_names))
 		{
-			raster_list[[i]]=Rstarspan_create_raster_stack(
-				raster_file_search_dataframe$search_fname[i])
+			names(vectors)="vector0001"
+		}
+		else
+		{
+			if(length(vector_names)>1)
+			{
+				print("length(vector_names) must be equal to length(vectors)...")
+				return(NULL)
+			} else
+			{
+				names(vectors)=vector_names
+			}
+			
 		}
 	} else
 	{
-		for(i in 1:raster_file_search_N)
-		{
-			raster_list[[i]]=Rstarspan_create_raster_stack(
-				raster_file_search_dataframe$search_fname[i],
-				raster_proj4string=raster_proj4strings[raster_file_search_dataframe$search_id[i]])
-		}
+		# If a list, FINISH.  This needs to read in files and vector objects.
+		
 	}
 	
-	# Create vector spatialpoints objects.
-	vector_file_search_dataframe=Rstarspan_file_search(vector_files)
-	vector_file_search_N=dim(vector_file_search_dataframe)[1]
-	vector_list=vector(mode="list",length=vector_file_search_N)
-	
-	if(missing(vector_proj4strings))
+	if(class(rasters)=="list")
 	{
-		# Fix this section.
-		for(i in 1:vector_file_search_N)
-		{
-			vector_list[[i]]=Rstarspan_vector_to_spatialpoints(
-					vector_file_search_dataframe$search_fname[i])
-		}
-	} else
+	#	rasters_types=sapply(rasters,class,simplify=FALSE)
+		rasters_list=unlist(sapply(rasters,Rstarspan_raster_string_to_raster_list,simplify=FALSE))
+		rasters_list_N=length(rasters_list)
+	}
+
+	# Determine indices if index_match=TRUE
+	if(index_match)
 	{
-		for(i in 1:vector_file_search_N)
-		{
-			vector_list[[i]]=Rstarspan_vector_to_spatialpoints(
-					vector_file=vector_file_search_dataframe$search_fname[i],
-					vector_proj4string=vector_proj4strings[vector_file_search_dataframe$search_id[i]],
-					xcolname=xcolnames[vector_file_search_dataframe$search_id[i]],
-					ycolname=ycolnames[vector_file_search_dataframe$search_id[i]],
-					header=headers[vector_file_search_dataframe$search_id[i]],
-					sep=seps[vector_file_search_dataframe$search_id[i]]
-			)
-		}
+		
+		
 	}
 	
 	# Begin raster extractions.
-	for (v in 1:vector_file_search_N)
+	for (v in 1:vector_list_N)
 	{
-		for (r in 1:raster_file_search_N)
+#		print(names(vector_list)[v])
+		for (r in 1:raster_list_N)
 		{
+			
 			rasterid=paste("R",sprintf("%05d",r),sep="")
 			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector_list[[v]],raster_list[[r]],rasterid=rasterid)
 	
@@ -308,16 +371,21 @@ Rstarspan=function(
 				# Merge in the rest of the data
 				if(output_raster_fname)
 				{
+				#	raster_fnames=data.frame(raster_fnames=
+				#					rep(raster_file_search_dataframe$search_fname[r],length(vectorpointid)*length(rasterbandids)))
 					raster_fnames=data.frame(raster_fnames=
-									rep(raster_file_search_dataframe$search_fname[r],length(vectorpointid)*length(rasterbandids)))
+								rep(names(raster_list)[r],length(vectorpointid)*length(rasterbandids)))
 					single_raster_extraction_raw_db=cbind(single_raster_extraction_raw_db,raster_fnames)
 				}
 				
 				if(output_vector_fname)
 				{
+				#	vector_fnames=data.frame(vector_fnames=
+				#					rep(basename(vector_file_search_dataframe$search_fname[v]),length(vectorpointid)*length(rasterbandids)))
 					vector_fnames=data.frame(vector_fnames=
-									rep(basename(vector_file_search_dataframe$search_fname[v]),length(vectorpointid)*length(rasterbandids)))
-					single_raster_extraction_raw_db=cbind(single_raster_extraction_raw_db,vector_fnames)
+						rep(names(vector_list)[v],length(vectorpointid)*length(rasterbandids)))
+				
+				single_raster_extraction_raw_db=cbind(single_raster_extraction_raw_db,vector_fnames)
 				}
 				
 				if (class(vector_list[[v]])=="SpatialPointsDataFrame" && output_vector_data)
@@ -359,7 +427,10 @@ Rstarspan=function(
 					{
 						single_vector_extraction_raw=rbind(single_vector_extraction_raw,single_raster_extraction_raw_db)
 					}
-					write.table(single_raster_extraction_raw_db,file=output_name,row.names = FALSE,col.names=FALSE,sep=",",append=TRUE)
+					if(outformat=="csv")
+					{
+						write.table(single_raster_extraction_raw_db,file=output_name,row.names = FALSE,col.names=FALSE,sep=",",append=TRUE)
+					}
 				}
 				
 				
