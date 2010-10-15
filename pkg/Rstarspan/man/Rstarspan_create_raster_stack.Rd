@@ -53,20 +53,7 @@ Rstarspan_create_raster_stack(raster_file, bands = NA, raster_proj4string = NA)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (raster_file, bands = NA, raster_proj4string = NA) 
-{
-    require(raster)
-    if (is.na(bands)) {
-        raster_stack = stack(raster_file)
-    }
-    else {
-        raster_stack = stack(raster_file, bands = bands)
-    }
-    if (!(is.na(raster_proj4string))) {
-        projection(raster_stack) <- raster_proj4string
-    }
-    return(raster_stack)
-  }
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

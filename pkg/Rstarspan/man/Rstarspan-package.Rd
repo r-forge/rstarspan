@@ -1,9 +1,8 @@
 \name{Rstarspan-package}
 \alias{Rstarspan-package}
-\alias{Rstarspan}
 \docType{package}
 \title{
-What the package does (short line)
+Extracts raster information at vector locations.
 ~~ package title ~~
 }
 \description{
@@ -23,16 +22,15 @@ LazyLoad: \tab yes\cr
 ~~ functions ~~
 }
 \author{
-Who wrote it
+Jonathan A. Greenberg
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Maintainer: Jonathan A. Greenberg <rstarspan@estarcion.net>
 ~~ The author and/or maintainer of the package ~~
 }
 \references{
 ~~ Literature or other references for background information ~~
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
-~~ the R documentation directory ~~
+
 \keyword{ package }
 \seealso{
 ~~ Optional links to other man pages, e.g. ~~

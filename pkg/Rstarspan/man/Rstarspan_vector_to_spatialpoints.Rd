@@ -62,59 +62,7 @@ Rstarspan_vector_to_spatialpoints(vector_file, vector_proj4string, xcolname = "x
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (vector_file, vector_proj4string, xcolname = "x", ycolname = "y", 
-    header = TRUE, sep = ",") 
-{
-    require(sp)
-    require(rgdal)
-    if (missing(vector_proj4string)) {
-        print("ASCII files require vector_proj4string to be assigned...")
-        print("Please refer to http://www.remotesensing.org/geotiff/proj_list/")
-        return(NULL)
-    }
-    vector_data_frame = read.table(vector_file, header = header, 
-        sep = sep)
-    if (is.character(xcolname) || is.character(ycolname)) {
-        if (header == TRUE) {
-            vector_data_frame_colnames = names(vector_data_frame)
-            vector_data_frame_col_N = length(vector_data_frame_colnames)
-            if (is.character(xcolname)) {
-                xcolnum = seq(1:vector_data_frame_col_N)[vector_data_frame_colnames == 
-                  xcolname]
-                if (length(xcolnum) == 0) {
-                  print(paste("xcol", xcolname, "not found in the ASCII file, please fix...", 
-                    sep = ""))
-                  return(NULL)
-                }
-            }
-            if (is.character(ycolname)) {
-                ycolnum = seq(1:vector_data_frame_col_N)[vector_data_frame_colnames == 
-                  ycolname]
-                if (length(ycolnum) == 0) {
-                  print(paste("ycol", ycolname, "not found in the ASCII file, please fix...", 
-                    sep = ""))
-                  return(NULL)
-                }
-            }
-        }
-    }
-    else {
-        xcolnum = xcolname
-        ycolnum = ycolname
-    }
-    if ((length(vector_data_frame)) == 2) {
-        vector_spatialpoints = SpatialPoints(c(vector_data_frame[xcolnum], 
-            vector_data_frame[ycolnum]), proj4string = CRS(vector_proj4string))
-    }
-    else {
-        vector_data_frame_datacols = seq(1:length(vector_data_frame))[!(seq(1:length(vector_data_frame)) \%in\% 
-            c(xcolnum, ycolnum))]
-        vector_spatialpoints = SpatialPointsDataFrame(c(vector_data_frame[xcolnum], 
-            vector_data_frame[ycolnum]), vector_data_frame[vector_data_frame_datacols], 
-            proj4string = CRS(vector_proj4string))
-    }
-    return(vector_spatialpoints)
-  }
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

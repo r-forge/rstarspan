@@ -65,40 +65,7 @@ Rstarspan_single_raster_extraction(vector_spatialpoints, raster_stack, bands = N
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (vector_spatialpoints, raster_stack, bands = NA, outformat = "data.frame", 
-    outorder = "db", method = "simple", rasterid = NA) 
-{
-    require(sp)
-    require(rgdal)
-    require(raster)
-    if (missing(vector_spatialpoints)) {
-        print("Missing vector_spatialpoints...")
-        return(NULL)
-    }
-    if (missing(raster_stack)) {
-        print("Missing raster_stack...")
-        return(NULL)
-    }
-    vector_spatialpoints_reproject = spTransform(vector_spatialpoints, 
-        CRS(projection(raster_stack)))
-    if (is.na(bands)) {
-        single_raster_extraction_raw = xyValues(raster_stack, 
-            vector_spatialpoints_reproject)
-        bandsid = paste("B", sprintf("\%05d", seq(1:nlayers(raster_stack))), 
-            sep = "")
-    }
-    else {
-        single_raster_extraction_raw = xyValues(stack(raster_stack@layers[bands]), 
-            vector_spatialpoints_reproject)
-        bandsid = paste("B", sprintf("\%05d", bands), sep = "")
-    }
-    if (!(is.na(rasterid))) {
-        colnames(single_raster_extraction_raw) = paste(rasterid, 
-            bandsid, sep = ".")
-    }
-    rownames(single_raster_extraction_raw) = seq(1:dim(vector_spatialpoints_reproject)[1])
-    return(single_raster_extraction_raw)
-  }
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

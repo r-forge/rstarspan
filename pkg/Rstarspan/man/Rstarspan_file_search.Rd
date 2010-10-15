@@ -47,31 +47,7 @@ Rstarspan_file_search(search_files)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (search_files) 
-{
-    search_files_N = length(search_files)
-    for (i in 1:search_files_N) {
-        temp_search_file_search = dir(dirname(search_files[i]), 
-            pattern = basename(search_files[i]), full.names = TRUE)
-        temp_search_file_search_N = length(temp_search_file_search)
-        if (length(temp_search_file_search_N) == 0) {
-            print(paste("Search pattern", search_files[i], "returned no results, please check and rerun...", 
-                sep = " "))
-            return(NULL)
-        }
-        temp_search_file_search_id = rep(i, temp_search_file_search_N)
-        temp_search_file_search_dataframe = data.frame(search_fname = temp_search_file_search, 
-            search_id = temp_search_file_search_id, stringsAsFactors = FALSE)
-        if (i == 1) {
-            search_file_search_dataframe = temp_search_file_search_dataframe
-        }
-        else {
-            search_file_search_dataframe = rbind(search_file_search_dataframe, 
-                temp_search_file_search_dataframe)
-        }
-    }
-    return(search_file_search_dataframe)
-  }
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
