@@ -396,7 +396,7 @@ Rstarspan=function(
 		{
 			
 			rasterid=paste("R",sprintf("%05d",r),sep="")
-			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector_list[[v]],rasters_list[[r]],rasterid=rasterid)
+			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector=vector_list[[v]],raster=rasters_list[[r]],rasterid=rasterid)
 	
 			vectorpointid=rownames(single_raster_extraction_raw)
 			rasterbandids=colnames(single_raster_extraction_raw)
