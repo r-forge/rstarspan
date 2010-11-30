@@ -162,6 +162,9 @@ Rstarspan_single_raster_extraction=function(
 		return(NULL)
 	}
 	
+	print(projection(vector))
+	print(projection(raster))
+	
 	# Reproject vector_spatialpoints to raster_stack projection.
 	# print(class(vector_spatialpoints))
 	vector_reproject=spTransform(vector,CRS=CRS(projection(raster)))
@@ -318,10 +321,10 @@ Rstarspan=function(
 			print("Single SpatialPointsDataFrame object provided...")
 		}
 		vectors_list_N=1
-		vectors=list(vectors)
+		vectors_list=list(vectors)
 		if(is.na(vector_names))
 		{
-			names(vectors)="vector0001"
+			names(vectors_list)="vector0001"
 		}
 		else
 		{
@@ -331,7 +334,7 @@ Rstarspan=function(
 				return(NULL)
 			} else
 			{
-				names(vectors)=vector_names
+				names(vectors_list)=vector_names
 			}
 			
 		}
@@ -396,6 +399,7 @@ Rstarspan=function(
 		{
 			
 			rasterid=paste("R",sprintf("%05d",r),sep="")
+	#		print(vector_list[[v]])
 			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector=vector_list[[v]],raster=rasters_list[[r]],rasterid=rasterid)
 	
 			vectorpointid=rownames(single_raster_extraction_raw)
