@@ -212,7 +212,7 @@ Rstarspan_single_raster_extraction=function(
 	return(single_raster_extraction_raw)
 }
 
-Rstarspan_raster_string_to_raster_list=function(raster)
+Rstarspan_raster_string_to_rasters_list=function(raster)
 {
 	require("raster")
 	if(class(raster)=="character")
@@ -232,16 +232,16 @@ Rstarspan_raster_string_to_raster_list=function(raster)
 			raster_search_list=as.list(file_search)
 		}
 		
-		raster_list=sapply(raster_search_list,brick,simplify=FALSE)
-		names(raster_list)=sapply(raster_list,function(x) basename(filename(x)),simplify=FALSE)
+		rasters_list=sapply(raster_search_list,brick,simplify=FALSE)
+		names(rasters_list)=sapply(rasters_list,function(x) basename(filename(x)),simplify=FALSE)
 		
 	} else
 	{
 		# Need some more error checking for now...
-		raster_list=raster
-		names(raster_list)=basename(filename(raster))
+		rasters_list=raster
+		names(rasters_list)=basename(filename(raster))
 	}
-	return(raster_list)
+	return(rasters_list)
 }
 
 Rstarspan=function(
@@ -333,14 +333,35 @@ Rstarspan=function(
 	} else
 	{
 		# If a list, FINISH.  This needs to read in files and vector objects.
+		require("RSAGA")
+		vectors_fnames=vectors
+		vectors_extensions=mapply(get.file.extension,vectors_fnames)
+		vector_list_N=length(vectors_fnames)
+		for(v in 1:vector_list_N)
+		{
+			if(vectors_extensions[[v]]==".shp")
+			{
+				# Should check to make sure file exists...
+				dsn=dirname(vectors_fnames[[v]])
+				layer=strsplit(vectors_fnames[[v]],".shp")[[1]]
+				temp_vector=readOGR(dsn,layer)
+				vectors[[v]]=temp_vector
+			}
+			
+		}
 		
+	
 	}
 	
 	if(class(rasters)=="list")
 	{
 	#	rasters_types=sapply(rasters,class,simplify=FALSE)
-		rasters_list=unlist(sapply(rasters,Rstarspan_raster_string_to_raster_list,simplify=FALSE))
+		rasters_list=unlist(sapply(rasters,Rstarspan_raster_string_to_rasters_list,simplify=FALSE))
 		rasters_list_N=length(rasters_list)
+	} else
+	{
+		rasters_list_N=1
+		
 	}
 
 	# Determine indices if index_match=TRUE
@@ -354,11 +375,11 @@ Rstarspan=function(
 	for (v in 1:vector_list_N)
 	{
 #		print(names(vector_list)[v])
-		for (r in 1:raster_list_N)
+		for (r in 1:rasters_list_N)
 		{
 			
 			rasterid=paste("R",sprintf("%05d",r),sep="")
-			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector_list[[v]],raster_list[[r]],rasterid=rasterid)
+			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector_list[[v]],rasters_list[[r]],rasterid=rasterid)
 	
 			vectorpointid=rownames(single_raster_extraction_raw)
 			rasterbandids=colnames(single_raster_extraction_raw)
@@ -374,7 +395,7 @@ Rstarspan=function(
 				#	raster_fnames=data.frame(raster_fnames=
 				#					rep(raster_file_search_dataframe$search_fname[r],length(vectorpointid)*length(rasterbandids)))
 					raster_fnames=data.frame(raster_fnames=
-								rep(names(raster_list)[r],length(vectorpointid)*length(rasterbandids)))
+								rep(names(rasters_list)[r],length(vectorpointid)*length(rasterbandids)))
 					single_raster_extraction_raw_db=cbind(single_raster_extraction_raw_db,raster_fnames)
 				}
 				
