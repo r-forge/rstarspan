@@ -144,8 +144,13 @@ Rstarspan_single_raster_extraction=function(
 		outformat="data.frame",
 		outorder="db",
 		method='simple',
-		rasterid=NA)
+		rasterid=NA,
+		verbose=FALSE)
 {
+	if(verbose)
+	{
+		print("Rstarspan_single_raster_extraction beginning...")
+	}
 	require(sp)
 	require(rgdal)
 	require(raster)
@@ -162,11 +167,15 @@ Rstarspan_single_raster_extraction=function(
 		return(NULL)
 	}
 	
-	print(projection(vector))
-	print(projection(raster))
+#	print(vector)
+#	print(projection(raster))
 	
 	# Reproject vector_spatialpoints to raster_stack projection.
 	# print(class(vector_spatialpoints))
+	if(verbose)
+	{
+		print("Reprojecting vector to raster coordinate system...")
+	}
 	vector_reproject=spTransform(vector,CRS=CRS(projection(raster)))
 #	print(vector_spatialpoints)
 #	print(vector_spatialpoints_reproject)
@@ -181,7 +190,13 @@ Rstarspan_single_raster_extraction=function(
 	{
 		if(class(vector)=="SpatialPoints" | class(vector)=="SpatialPointsDataFrame")
 		{
-			single_raster_extraction_raw=xyValues(raster,vector_reproject,method='bilinear')
+			if(verbose)
+			{
+				print("Extracting values...")
+				print(class(vector))
+			}
+			
+			single_raster_extraction_raw=xyValues(raster,coordinates(vector_reproject),method='bilinear')
 		} 
 		if(class(vector)=="SpatialPolygons" | class(vector)=="SpatialPolygonsDataFrame")
 		{
@@ -212,6 +227,11 @@ Rstarspan_single_raster_extraction=function(
 	{
 		rownames(single_raster_extraction_raw)=1
 	}
+	if(verbose)
+	{
+		print("Rstarspan_single_raster_extraction ended...")
+	}
+	
 	return(single_raster_extraction_raw)
 }
 
@@ -400,7 +420,7 @@ Rstarspan=function(
 			
 			rasterid=paste("R",sprintf("%05d",r),sep="")
 	#		print(vector_list[[v]])
-			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector=vector_list[[v]],raster=rasters_list[[r]],rasterid=rasterid)
+			single_raster_extraction_raw=Rstarspan_single_raster_extraction(vector=vectors_list[[v]],raster=rasters_list[[r]],rasterid=rasterid,verbose=verbose)
 	
 			vectorpointid=rownames(single_raster_extraction_raw)
 			rasterbandids=colnames(single_raster_extraction_raw)
