@@ -269,7 +269,8 @@ Rstarspan=function(
 		output_raster_file_types=TRUE,
 		index_match=FALSE,
 		use_zvalue=TRUE,
-		vector_names=NA)	
+		vector_names=NA,
+		verbose=FALSE)	
 {
 	
 	# raster_files: a vector of raster files or patterns to match, following the pattern requirements of dir()
@@ -312,6 +313,10 @@ Rstarspan=function(
 	if(class(vectors)=="SpatialPolygonsDataFrame" || class(vectors) == "SpatialPointsDataFrame")
 	{
 		# Only one vector was provided.
+		if(verbose)
+		{
+			print("Single SpatialPointsDataFrame object provided...")
+		}
 		vectors_list_N=1
 		vectors=list(vectors)
 		if(is.na(vector_names))
@@ -333,6 +338,10 @@ Rstarspan=function(
 	} else
 	{
 		# If a list, FINISH.  This needs to read in files and vector objects.
+		if(verbose)
+		{
+			print("List of vector filenames provided...")
+		}
 		require("RSAGA")
 		vectors_fnames=vectors
 		vectors_extensions=mapply(get.file.extension,vectors_fnames)
@@ -356,12 +365,20 @@ Rstarspan=function(
 	if(class(rasters)=="list")
 	{
 	#	rasters_types=sapply(rasters,class,simplify=FALSE)
+		if(verbose)
+		{
+			print("List of rasters provided...")
+		}
 		rasters_list=unlist(sapply(rasters,Rstarspan_raster_string_to_rasters_list,simplify=FALSE))
 		rasters_list_N=length(rasters_list)
 	} else
 	{
+		if(verbose)
+		{
+			print("Single raster provided...")
+		}
 		rasters_list_N=1
-		
+		rasters_list=list(rasters)
 	}
 
 	# Determine indices if index_match=TRUE
