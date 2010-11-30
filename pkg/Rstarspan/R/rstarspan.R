@@ -212,7 +212,7 @@ Rstarspan_single_raster_extraction=function(
 		bandsid=paste("B",sprintf("%05d",bands),sep="")
 	}
 	
-	single_raster_extraction_raw=as.matrix(single_raster_extraction_raw)
+#	single_raster_extraction_raw=as.matrix(single_raster_extraction_raw)
 	
 #	print(class(single_raster_extraction_raw))	
 	if(!(is.na(rasterid)))
